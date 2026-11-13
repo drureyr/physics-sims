@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Work–Energy Theorem | ACP Energy Sims</title>
+<link rel="stylesheet" href="../../../assets/sim.css">
+</head>
+<body>
+<header class="sim-header">
+  <div>
+    <div class="crumbs"><a href="../../../">Home</a> › <a href="../../">ACP Physics</a> › <a href="../">Energy</a> › Sim 3</div>
+    <h1>Work–Energy Theorem: W = ΔKE</h1>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="sim">Simulation</button>
+    <button class="tab-btn" data-tab="hist">History</button>
+  </nav>
+</header>
+
+<section id="sim" class="tab-panel active">
+  <div class="sim-wrap">
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <aside class="panel">
+      <div class="eq">Work done = change in kinetic energy<br><b>W = KE<sub>after</sub> − KE<sub>before</sub></b></div>
+      <div class="ctrl">
+        <label>Mass, m <span class="val" id="m-val"></span></label>
+        <input type="range" id="m" min="1" max="10" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>Starting speed <span class="val" id="v0-val"></span></label>
+        <input type="range" id="v0" min="0" max="10" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <label>Force in push zone, F <span class="val" id="F-val"></span></label>
+        <input type="range" id="F" min="-40" max="40" step="5" value="20">
+      </div>
+      <div class="ctrl">
+        <label>Length of push zone, d <span class="val" id="d-val"></span></label>
+        <input type="range" id="d" min="1" max="6" step="1" value="4">
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="go">▶ Go</button>
+        <button class="btn secondary" id="reset">↺ Reset</button>
+      </div>
+      <div class="readouts">
+        <div class="ro"><span class="k">KE before</span><span class="v" id="rKEi" style="color:var(--ke)"></span></div>
+        <div class="ro"><span class="k">Work done, W = F × d</span><span class="v" id="rW" style="color:var(--work)"></span></div>
+        <div class="ro"><span class="k">KE after</span><span class="v" id="rKEf" style="color:var(--ke)"></span></div>
+        <div class="ro"><span class="k">Change in KE (after − before)</span><span class="v" id="rdKE"></span></div>
+        <div class="ro"><span class="k">Speed after</span><span class="v" id="rvf"></span></div>
+      </div>
+      <p style="margin:0;font-size:14px;color:var(--muted)">A <b>negative</b> force pushes against the motion, like brakes. The track has no friction.</p>
+    </aside>
+  </div>
+</section>
+
+<section id="hist" class="tab-panel">
+  <div class="history">
+    <div class="card">
+      <h2>Connecting work and motion</h2>
+      <p>By 1800, engineers measured <b>work</b> (force × distance) and scientists argued about <b>vis viva</b> (mv²). The work–energy theorem connected the two: the work done on an object equals the change in its kinetic energy.</p>
+    </div>
+    <div class="card">
+      <h3>Gaspard-Gustave de Coriolis <span class="dates">(1792–1843)</span></h3>
+      <p>In <strong>1829</strong> Coriolis showed that if you define work as force × distance, then the work done on a body equals the change in <b>½mv²</b>. That is exactly why kinetic energy has the "½" in it. (Coriolis is also famous for the "Coriolis effect," which makes hurricanes spin.)</p>
+    </div>
+    <div class="card">
+      <h3>Thomas Young <span class="dates">(1773–1829)</span></h3>
+      <p>An English doctor and scientist (he also helped decode the Egyptian hieroglyphs on the Rosetta Stone). In <strong>1807</strong> he was the first to use the word <b>"energy"</b> in its modern scientific sense, for the quantity mv².</p>
+    </div>
+    <div class="card connect">
+      <h3>Connections</h3>
+      <p><strong>Sports:</strong> A baseball pitcher pushes the ball forward over about 2 meters during the throw. The work done by the hand becomes the ball's kinetic energy. A longer stride means a longer push distance, more work and a faster pitch.</p>
+      <p><strong>Engineering:</strong> Car brakes do <em>negative</em> work. They push backward on the car while it moves forward, which removes kinetic energy. Highway "runaway truck ramps" use gravel and an uphill slope to do the same thing.</p>
+    </div>
+  </div>
+</section>
+
+<script src="../../../assets/sim.js"></script>
+<script>
+Sim.setupTabs();
+const ctx = Sim.canvas('cv', 900, 470);
+const PX = 58, X0 = 40, TRACK = 14.5, ZONE0 = 4, GROUND = 250, TIME = 0.45;
+let ready = false, x = 0, v = 0, running = false, done = false;
+
+const mS = Sim.slider('m', s => s + ' kg', reset);
+const v0S = Sim.slider('v0', s => s + ' m/s', reset);
+const FS = Sim.slider('F', s => (s > 0 ? '+' : '') + s + ' N', reset);
+const dS = Sim.slider('d', s => s + ' m', reset);
+document.getElementById('go').onclick = () => { reset(); running = true; };
+document.getElementById('reset').onclick = reset;
+function reset() { if (!ready) return; x = v0S.value > 0 ? 0 : ZONE0; v = v0S.value; running = false; done = false; if (ready) draw(); }
+ready = true; reset();
+
+// predicted outcome
+function outcome() {
+  const m = mS.value, v0 = v0S.value, F = FS.value, d = dS.value;
+  const KEi = 0.5 * m * v0 * v0;
+  let W = F * d, KEf = KEi + W, stopAt = null;
+  if (KEf < 0) { stopAt = KEi / -F; W = -KEi; KEf = 0; }
+  if (v0 === 0 && F <= 0) { W = 0; KEf = 0; stopAt = 0; }
+  return { KEi, W, KEf, vf: Math.sqrt(2 * KEf / m), stopAt };
+}
+
+function draw() {
+  const o = outcome(), d = dS.value, F = FS.value, W = ctx.W;
+  ctx.clearRect(0, 0, W, ctx.H);
+  ctx.fillStyle = '#eef4fa'; ctx.fillRect(0, 0, W, GROUND);
+  // push zone
+  const zx = X0 + ZONE0 * PX, zw = d * PX;
+  ctx.fillStyle = F >= 0 ? 'rgba(217,119,6,.16)' : 'rgba(192,57,43,.14)';
+  ctx.fillRect(zx, 60, zw, GROUND - 60);
+  ctx.strokeStyle = F >= 0 ? Sim.C.work : Sim.C.th; ctx.setLineDash([6, 5]); ctx.lineWidth = 2;
+  ctx.strokeRect(zx, 60, zw, GROUND - 60); ctx.setLineDash([]);
+  Sim.text(ctx, F >= 0 ? 'PUSH ZONE' : 'BRAKING ZONE', zx + zw / 2, 82, { size: 14, weight: 700, align: 'center', color: F >= 0 ? Sim.C.work : Sim.C.th });
+  Sim.text(ctx, 'F = ' + (F > 0 ? '+' : '') + F + ' N', zx + zw / 2, 102, { size: 14, align: 'center' });
+  // track
+  ctx.fillStyle = '#9aa5ad'; ctx.fillRect(0, GROUND, W, 10);
+  for (let m = 0; m <= 14; m++) {
+    const tx = X0 + m * PX;
+    ctx.strokeStyle = '#5b6770'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(tx, GROUND + 10); ctx.lineTo(tx, GROUND + 18); ctx.stroke();
+    if (m % 2 === 0) Sim.text(ctx, m + ' m', tx, GROUND + 32, { size: 12, weight: 500, align: 'center', color: '#5b6770' });
+  }
+  // cart
+  const cx = X0 + x * PX, cw = 50 + mS.value * 3, ch = 26 + mS.value * 2;
+  ctx.fillStyle = '#1d5fa8'; ctx.fillRect(cx - cw / 2, GROUND - ch - 14, cw, ch);
+  Sim.text(ctx, mS.value + ' kg', cx, GROUND - ch / 2 - 9, { size: 14, color: '#fff', align: 'center' });
+  ctx.fillStyle = '#333'; [cx - cw / 3, cx + cw / 3].forEach(wx => { ctx.beginPath(); ctx.arc(wx, GROUND - 7, 7, 0, 7); ctx.fill(); });
+  // force arrow while in zone
+  const inZone = x >= ZONE0 - 1e-6 && x <= ZONE0 + d + 1e-6;
+  if (inZone && F !== 0 && !(done && v === 0 && F < 0)) {
+    const L = Math.abs(F) * 2.2;
+    if (F > 0) Sim.arrow(ctx, cx - cw / 2 - L - 4, GROUND - ch / 2 - 14, cx - cw / 2 - 4, GROUND - ch / 2 - 14, Sim.C.work, 5, 'F', 'mid');
+    else Sim.arrow(ctx, cx + cw / 2 + L + 4, GROUND - ch / 2 - 14, cx + cw / 2 + 4, GROUND - ch / 2 - 14, Sim.C.th, 5, 'F', 'mid');
+  }
+  if (v > 0.01) Sim.arrow(ctx, cx, GROUND - ch - 30, cx + v * 7 + 10, GROUND - ch - 30, '#1f2933', 3, 'v', 'end');
+  Sim.text(ctx, 'speed = ' + Sim.fmt(v, 1) + ' m/s', 18, 32, { size: 18, weight: 700 });
+  if (o.stopAt !== null && o.stopAt > 0 && F < 0) Sim.text(ctx, 'The brakes stop the cart ' + Sim.fmt(o.stopAt, 1) + ' m into the zone.', 18, 54, { size: 15, color: Sim.C.th });
+  if (v0S.value === 0 && F <= 0) Sim.text(ctx, 'The cart is not moving. Give it a starting speed or a forward push.', 18, 54, { size: 15, color: Sim.C.th });
+
+  // bars (show results only after the run, or the prediction greyed before)
+  const show = done;
+  const big = Math.max(o.KEi, Math.abs(F * d), o.KEi + Math.max(0, F * d), 20);
+  const maxAbs = Math.ceil(big * 1.1 / 50) * 50;
+  Sim.bars(ctx, 40, 300, 600, 160, [
+    { label: 'KE before', value: o.KEi, color: Sim.C.ke },
+    { label: 'Work done', value: show ? o.W : 0, color: o.W >= 0 ? Sim.C.work : Sim.C.th },
+    { label: 'KE after', value: show ? o.KEf : 0, color: Sim.C.ke },
+  ], maxAbs, { title: (show ? 'ENERGY (joules)' : 'ENERGY (joules): press Go to see the result') + '   scale ±' + maxAbs + ' J', allowNeg: true });
+
+  const q = id => document.getElementById(id);
+  q('rKEi').textContent = Sim.nice(o.KEi) + ' J';
+  q('rW').textContent = show ? Sim.nice(o.W) + ' J' : '?';
+  q('rKEf').textContent = show ? Sim.nice(o.KEf) + ' J' : '?';
+  q('rdKE').textContent = show ? Sim.nice(o.KEf - o.KEi) + ' J' : '?';
+  q('rvf').textContent = show ? Sim.fmt(o.vf, 1) + ' m/s' : '?';
+}
+
+Sim.loop(dt => {
+  if (running) {
+    const h = dt * TIME, F = FS.value, m = mS.value, d = dS.value, o = outcome();
+    const inZone = x >= ZONE0 && x < ZONE0 + d;
+    if (inZone) {
+      v += (F / m) * h;
+      if (v <= 0) { v = 0; x = ZONE0 + (o.stopAt ?? 0); running = false; done = true; }
+    }
+    x += v * h;
+    if (running && x >= ZONE0 + d && (x - v * h) < ZONE0 + d) v = o.vf; // snap exit speed exactly
+    if (x > TRACK - 0.6) { x = TRACK - 0.6; running = false; done = true; }
+    if (v === 0 && running && !inZone) { running = false; done = true; }
+  }
+  draw();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conservation of Energy | ACP Energy Sims</title>
+<link rel="stylesheet" href="../../../assets/sim.css">
+</head>
+<body>
+<header class="sim-header">
+  <div>
+    <div class="crumbs"><a href="../../../">Home</a> › <a href="../../">ACP Physics</a> › <a href="../">Energy</a> › Sim 5</div>
+    <h1>Conservation of Energy: KE ⇄ PE</h1>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="sim">Simulation</button>
+    <button class="tab-btn" data-tab="hist">History</button>
+  </nav>
+</header>
+
+<section id="sim" class="tab-panel active">
+  <div class="sim-wrap">
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <aside class="panel">
+      <div class="eq">With no friction, KE + PE stays the same<br><b>mgh<sub>top</sub> = ½mv² + mgh</b></div>
+      <div class="ctrl">
+        <label>Track</label>
+        <select id="track"><option value="bowl">Bowl</option><option value="valleys">Two valleys</option></select>
+      </div>
+      <div class="ctrl">
+        <label>Mass, m <span class="val" id="m-val"></span></label>
+        <input type="range" id="m" min="1" max="10" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>Starting height, h <span class="val" id="h-val"></span></label>
+        <input type="range" id="h" min="1" max="6" step="1" value="5">
+      </div>
+      <label class="check"><input type="checkbox" id="slow"> Slow motion</label>
+      <div class="btn-row">
+        <button class="btn" id="go">▶ Release</button>
+        <button class="btn secondary" id="reset">↺ Reset</button>
+      </div>
+      <div class="readouts">
+        <div class="ro"><span class="k">Height</span><span class="v" id="rh"></span></div>
+        <div class="ro"><span class="k">Speed</span><span class="v" id="rv"></span></div>
+        <div class="ro"><span class="k">Fastest speed so far</span><span class="v" id="rmax"></span></div>
+        <div class="ro"><span class="k">Kinetic energy</span><span class="v" id="rKE" style="color:var(--ke)"></span></div>
+        <div class="ro"><span class="k">Potential energy</span><span class="v" id="rPE" style="color:var(--pe)"></span></div>
+        <div class="ro big"><span class="k">Total energy</span><span class="v" id="rTot" style="color:var(--tot)"></span></div>
+      </div>
+      <p style="margin:0;font-size:14px;color:var(--muted)">g = 9.8 m/s². Heights are measured from the dashed PE = 0 line.</p>
+    </aside>
+  </div>
+</section>
+
+<section id="hist" class="tab-panel">
+  <div class="history">
+    <div class="card">
+      <h2>One of the great laws of nature</h2>
+      <p>The law of conservation of energy says energy is never created or destroyed. It only changes form. Three people, working separately in the 1840s, are usually given credit for discovering it.</p>
+    </div>
+    <div class="card">
+      <h3>Julius Robert Mayer <span class="dates">(1814–1878)</span></h3>
+      <p>A German ship's doctor. On a voyage to the tropics in 1840, he noticed that sailors' blood in their veins was unusually bright red. He reasoned that in a hot climate the body burns less food to stay warm. That led him to the idea that heat and motion are forms of one thing. He published the idea in <strong>1842</strong>, but at first few scientists paid attention.</p>
+    </div>
+    <div class="card">
+      <h3>James Prescott Joule <span class="dates">(1818–1889)</span></h3>
+      <p>An English brewer and scientist who made careful measurements in the <strong>1840s</strong> showing that a fixed amount of work always produces the same amount of heat. The unit of energy, the <b>joule</b>, is named after him.</p>
+    </div>
+    <div class="card">
+      <h3>Hermann von Helmholtz <span class="dates">(1821–1894)</span></h3>
+      <p>A German physician and physicist. In <strong>1847</strong> he published <em>On the Conservation of Force</em>, which stated the law mathematically for mechanics, heat, electricity and magnetism, and even living things.</p>
+    </div>
+    <div class="card">
+      <h3>Emmy Noether <span class="dates">(1882–1935)</span></h3>
+      <p>A German mathematician who proved in <strong>1915</strong> (published 1918) a deep reason <em>why</em> energy is conserved: because the laws of physics are the same today as they were yesterday and will be tomorrow. Albert Einstein called her a creative mathematical genius.</p>
+    </div>
+    <div class="card connect">
+      <h3>Connections</h3>
+      <p><strong>Biology:</strong> Mayer's idea started with human blood. Your body follows the same law: the chemical energy in food becomes the kinetic energy of your muscles and the thermal energy that keeps you at 37 °C.</p>
+      <p><strong>Engineering:</strong> Roller coaster designers use conservation of energy. The first hill must be the tallest, because the cars can never rise higher than the energy they started with allows.</p>
+      <p><strong>Philosophy:</strong> Noether's theorem links a law of physics to a symmetry of time itself. Many physicists see this as one of the most beautiful ideas in science.</p>
+    </div>
+  </div>
+</section>
+
+<script src="../../../assets/sim.js"></script>
+<script src="../../../assets/track.js"></script>
+<script>
+Sim.setupTabs();
+TrackSim.init({ friction: false });
+</script>
+</body>
+</html>

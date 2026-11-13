@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Work | ACP Energy Sims</title>
+<link rel="stylesheet" href="../../../assets/sim.css">
+</head>
+<body>
+<header class="sim-header">
+  <div>
+    <div class="crumbs"><a href="../../../">Home</a> › <a href="../../">ACP Physics</a> › <a href="../">Energy</a> › Sim 1</div>
+    <h1>Work: Force × Distance</h1>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="sim">Simulation</button>
+    <button class="tab-btn" data-tab="hist">History</button>
+  </nav>
+</header>
+
+<section id="sim" class="tab-panel active">
+  <div class="sim-wrap">
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <aside class="panel">
+      <div class="eq">Work = (force parallel to motion) × distance<br><b>W = F<sub>∥</sub> × d</b></div>
+      <div class="ctrl">
+        <label>Force, F <span class="val" id="F-val"></span></label>
+        <input type="range" id="F" min="0" max="100" step="5" value="50">
+      </div>
+      <div class="ctrl">
+        <label>Angle of rope, θ <span class="val" id="ang-val"></span></label>
+        <input type="range" id="ang" min="0" max="90" step="5" value="0">
+      </div>
+      <div class="ctrl">
+        <label>Distance moved, d <span class="val" id="d-val"></span></label>
+        <input type="range" id="d" min="1" max="10" step="1" value="4">
+      </div>
+      <label class="check"><input type="checkbox" id="parts" checked> Show parallel and perpendicular parts</label>
+      <div class="btn-row">
+        <button class="btn" id="go">▶ Pull</button>
+        <button class="btn secondary" id="reset">↺ Reset</button>
+      </div>
+      <div class="readouts">
+        <div class="ro"><span class="k">F (total pull)</span><span class="v" id="rF"></span></div>
+        <div class="ro"><span class="k">F<sub>∥</sub> (parallel to motion)</span><span class="v" id="rFpar" style="color:var(--work)"></span></div>
+        <div class="ro"><span class="k">F<sub>⊥</sub> (perpendicular)</span><span class="v" id="rFperp"></span></div>
+        <div class="ro"><span class="k">Distance so far</span><span class="v" id="rd"></span></div>
+        <div class="ro big"><span class="k">Work done, W</span><span class="v" id="rW" style="color:var(--work)"></span></div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section id="hist" class="tab-panel">
+  <div class="history">
+    <div class="card">
+      <h2>Where did the idea of "work" come from?</h2>
+      <p>In everyday English, "work" means any effort. In physics it has a precise meaning: a force does work only when the object moves, and only the part of the force <em>along</em> the motion counts.</p>
+    </div>
+    <div class="card">
+      <h3>Gaspard-Gustave de Coriolis <span class="dates">(1792–1843)</span></h3>
+      <p>A French engineer and mathematician. In <strong>1829</strong>, in his book <em>On the Calculation of the Effect of Machines</em>, he gave the word <em>travail</em> ("work") its scientific meaning: force multiplied by the distance moved in the direction of the force. He wanted a fair way to measure what a machine actually accomplishes.</p>
+    </div>
+    <div class="card">
+      <h3>Jean-Victor Poncelet <span class="dates">(1788–1867)</span></h3>
+      <p>A French engineer and army officer who taught mechanics to engineers. Like Coriolis, he championed the idea of "mechanical work" in the 1820s and 1830s. He worked out many of his geometry ideas while a prisoner of war in Russia after Napoleon's failed invasion of <strong>1812</strong>.</p>
+    </div>
+    <div class="card">
+      <h3>James Watt <span class="dates">(1736–1819)</span></h3>
+      <p>The Scottish inventor whose improved steam engine (patented <strong>1769</strong>) helped power the Industrial Revolution. To sell engines, he compared them to horses and invented the unit <strong>horsepower</strong>. The SI unit of power, the <strong>watt</strong> (1 joule of work per second), is named after him.</p>
+    </div>
+    <div class="card connect">
+      <h3>Connections</h3>
+      <p><strong>History and engineering:</strong> The idea of "work" grew out of the Industrial Revolution. Factory owners needed to compare water wheels, horses and steam engines, so they had to measure how much useful work each one did.</p>
+      <p><strong>Biology:</strong> When you hold a heavy backpack still, your muscles get tired, but you do <em>no</em> physics work on the backpack because it doesn't move. Your muscle fibers are still using food energy to keep contracting.</p>
+    </div>
+  </div>
+</section>
+
+<script src="../../../assets/sim.js"></script>
+<script>
+Sim.setupTabs();
+const ctx = Sim.canvas('cv', 900, 470);
+const PX_PER_M = 66, X0 = 70, FLOOR = 360, BOX_W = 72, BOX_H = 60, N_SCALE = 2.5;
+let pos = 0, moving = false, ready = false;
+
+const F = Sim.slider('F', v => v + ' N', reset);
+const ang = Sim.slider('ang', v => v + '°', reset);
+const dS = Sim.slider('d', v => v + ' m', reset);
+const parts = document.getElementById('parts');
+parts.addEventListener('change', draw);
+document.getElementById('go').onclick = () => { if (pos >= dS.value - 1e-6) pos = 0; moving = true; };
+document.getElementById('reset').onclick = reset;
+function reset() { pos = 0; moving = false; if (ready) draw(); }
+ready = true;
+
+function vals() {
+  const th = Sim.rad(ang.value);
+  const Fpar = F.value * Math.cos(th), Fperp = F.value * Math.sin(th);
+  return { Fpar: Math.abs(Fpar) < 1e-9 ? 0 : Fpar, Fperp, th };
+}
+
+function draw() {
+  const { Fpar, Fperp, th } = vals();
+  const W = ctx.W, H = ctx.H;
+  ctx.clearRect(0, 0, W, H);
+  // sky + floor
+  ctx.fillStyle = '#eef4fa'; ctx.fillRect(0, 0, W, FLOOR);
+  ctx.fillStyle = '#d9cbb2'; ctx.fillRect(0, FLOOR, W, H - FLOOR);
+  ctx.strokeStyle = '#8a7656'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, FLOOR); ctx.lineTo(W, FLOOR); ctx.stroke();
+  // meter ruler
+  for (let m = 0; m <= 10; m++) {
+    const x = X0 + m * PX_PER_M + BOX_W / 2;
+    ctx.strokeStyle = '#6d5c40'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x, FLOOR); ctx.lineTo(x, FLOOR + 10); ctx.stroke();
+    Sim.text(ctx, m + ' m', x, FLOOR + 26, { size: 13, weight: 500, color: '#5b4a2f', align: 'center' });
+  }
+  // finish flag at d
+  const fx = X0 + dS.value * PX_PER_M + BOX_W / 2;
+  ctx.strokeStyle = '#444'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(fx, FLOOR); ctx.lineTo(fx, FLOOR - 120); ctx.stroke();
+  ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.moveTo(fx, FLOOR - 120); ctx.lineTo(fx + 28, FLOOR - 110); ctx.lineTo(fx, FLOOR - 100); ctx.fill();
+  // displacement arrow
+  const sx = X0 + BOX_W / 2, cx = X0 + pos * PX_PER_M + BOX_W / 2;
+  if (pos > 0.05) Sim.arrow(ctx, sx, FLOOR + 62, cx, FLOOR + 62, '#333', 3, 'd = ' + Sim.fmt(pos, 1) + ' m', 'mid');
+  else Sim.text(ctx, 'start', sx, FLOOR + 66, { size: 14, color: '#5b4a2f', align: 'center' });
+  // crate
+  const bx = X0 + pos * PX_PER_M, by = FLOOR - BOX_H;
+  ctx.fillStyle = '#b07a3c'; ctx.fillRect(bx, by, BOX_W, BOX_H);
+  ctx.strokeStyle = '#7a4f20'; ctx.lineWidth = 3; ctx.strokeRect(bx, by, BOX_W, BOX_H);
+  ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + BOX_W, by + BOX_H); ctx.moveTo(bx + BOX_W, by); ctx.lineTo(bx, by + BOX_H); ctx.stroke();
+  // rope + force arrow from attachment point
+  const ax = bx + BOX_W, ay = by + 14;
+  const L = F.value * N_SCALE;
+  const tx = ax + L * Math.cos(th), ty = ay - L * Math.sin(th);
+  if (F.value > 0) {
+    if (parts.checked) {
+      // parallel and perpendicular components
+      Sim.arrow(ctx, ax, ay, ax + Fpar * N_SCALE, ay, Sim.C.work, 6, Fpar > 0.5 ? 'F∥' : '', 'end');
+      ctx.save(); ctx.setLineDash([6, 5]); ctx.strokeStyle = '#7d8a94'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(ax + Fpar * N_SCALE, ay); ctx.lineTo(tx, ty); ctx.stroke(); ctx.restore();
+      if (Fperp > 0.5) Sim.text(ctx, 'F⊥', ax + Fpar * N_SCALE + 16, (ay + ty) / 2, { size: 15, color: '#5b6770' });
+    }
+    Sim.arrow(ctx, ax, ay, tx, ty, '#1f2933', 4, 'F = ' + F.value + ' N', 'end');
+    // angle arc
+    if (ang.value > 0) {
+      ctx.strokeStyle = '#555'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(ax, ay, 34, -th, 0); ctx.stroke();
+      Sim.text(ctx, ang.value + '°', ax + 44 * Math.cos(th / 2), ay - 44 * Math.sin(th / 2) + 5, { size: 14 });
+    }
+  }
+  // work counter
+  const Wsofar = Fpar * pos;
+  Sim.text(ctx, 'Work done so far: ' + Sim.nice(Wsofar) + ' J', 20, 34, { size: 20, weight: 700, color: Sim.C.work });
+  if (F.value > 0 && Fpar < 0.5) Sim.text(ctx, 'Force is perpendicular to the motion: no work is done!', 20, 62, { size: 16, color: '#c0392b' });
+
+  document.getElementById('rF').textContent = F.value + ' N';
+  document.getElementById('rFpar').textContent = Sim.fmt(Fpar, 1) + ' N';
+  document.getElementById('rFperp').textContent = Sim.fmt(Fperp, 1) + ' N';
+  document.getElementById('rd').textContent = Sim.fmt(pos, 1) + ' m';
+  document.getElementById('rW').textContent = Sim.nice(Wsofar) + ' J';
+}
+
+Sim.loop(dt => {
+  if (moving) {
+    pos = Math.min(dS.value, pos + 1.6 * dt);
+    if (pos >= dS.value) moving = false;
+  }
+  draw();
+});
+</script>
+</body>
+</html>

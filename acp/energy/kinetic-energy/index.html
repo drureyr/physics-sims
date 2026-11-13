@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kinetic Energy | ACP Energy Sims</title>
+<link rel="stylesheet" href="../../../assets/sim.css">
+</head>
+<body>
+<header class="sim-header">
+  <div>
+    <div class="crumbs"><a href="../../../">Home</a> › <a href="../../">ACP Physics</a> › <a href="../">Energy</a> › Sim 2</div>
+    <h1>Kinetic Energy: Energy of Motion</h1>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="sim">Simulation</button>
+    <button class="tab-btn" data-tab="hist">History</button>
+  </nav>
+</header>
+
+<section id="sim" class="tab-panel active">
+  <div class="sim-wrap">
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <aside class="panel">
+      <div class="eq">Kinetic energy<br><b>KE = ½ m v²</b></div>
+      <div class="ctrl">
+        <label>Mass, m <span class="val" id="m-val"></span></label>
+        <input type="range" id="m" min="1" max="10" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>Speed, v <span class="val" id="v-val"></span></label>
+        <input type="range" id="v" min="0" max="10" step="1" value="3">
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="mark">● Mark point</button>
+        <button class="btn secondary" id="clear">Clear marks</button>
+      </div>
+      <div class="readouts">
+        <div class="ro"><span class="k">Mass</span><span class="v" id="rm"></span></div>
+        <div class="ro"><span class="k">Speed</span><span class="v" id="rv"></span></div>
+        <div class="ro"><span class="k">Speed squared, v²</span><span class="v" id="rv2"></span></div>
+        <div class="ro big"><span class="k">Kinetic energy, KE</span><span class="v" id="rKE" style="color:var(--ke)"></span></div>
+      </div>
+      <p style="margin:0;font-size:14px;color:var(--muted)">Tip: Use <b>Mark point</b> to save a point on the graph, then change one slider and compare.</p>
+    </aside>
+  </div>
+</section>
+
+<section id="hist" class="tab-panel">
+  <div class="history">
+    <div class="card">
+      <h2>The great "vis viva" debate</h2>
+      <p>For about 50 years, scientists argued over the right way to measure the "force" of a moving object. Was it <b>mv</b> (what we now call momentum) or <b>mv²</b>? Both turned out to be useful, but they measure different things.</p>
+    </div>
+    <div class="card">
+      <h3>Gottfried Wilhelm Leibniz <span class="dates">(1646–1716)</span></h3>
+      <p>The German philosopher and mathematician (and co-inventor of calculus) argued in <strong>1686</strong> that the true measure of a moving body's "living force," or <em>vis viva</em>, was <b>mv²</b>, not mv as followers of René Descartes believed.</p>
+    </div>
+    <div class="card">
+      <h3>Willem 's Gravesande <span class="dates">(1688–1742)</span></h3>
+      <p>A Dutch scientist who, in the early <strong>1720s</strong>, dropped brass balls into soft clay. A ball dropped fast enough to hit at <em>twice</em> the speed made a dent <em>four times</em> as deep. Evidence for v²!</p>
+    </div>
+    <div class="card">
+      <h3>Émilie du Châtelet <span class="dates">(1706–1749)</span></h3>
+      <p>A French mathematician and physicist who used 's Gravesande's clay experiments to defend mv² in her book <em>Foundations of Physics</em> (<strong>1740</strong>). She also translated Isaac Newton's <em>Principia</em> into French, and her translation is still used today.</p>
+    </div>
+    <div class="card">
+      <h3>Coriolis and the "½" <span class="dates">(1829)</span></h3>
+      <p>Gaspard-Gustave de Coriolis (1792–1843) showed that the quantity <b>½mv²</b> fits exactly with his definition of work. The name <b>"kinetic energy"</b> (from the Greek <em>kinesis</em>, motion) was made popular in the 1860s by William Thomson, Lord Kelvin (1824–1907), and Peter Guthrie Tait (1831–1901).</p>
+    </div>
+    <div class="card connect">
+      <h3>Connections</h3>
+      <p><strong>Driver's ed:</strong> A car going twice as fast has four times the kinetic energy, so it needs about four times the distance to stop. That's why speed limits drop near schools.</p>
+      <p><strong>Earth science:</strong> Meteors hit the atmosphere at speeds of 11 to 72 km/s. Because KE grows with v², even a pebble-sized meteor carries enough energy to glow white-hot as a "shooting star."</p>
+    </div>
+  </div>
+</section>
+
+<script src="../../../assets/sim.js"></script>
+<script>
+Sim.setupTabs();
+const ctx = Sim.canvas('cv', 900, 470);
+let ready = false, cartX = 80, marks = [];
+const mS = Sim.slider('m', v => v + ' kg', () => ready && draw());
+const vS = Sim.slider('v', v => v + ' m/s', () => ready && draw());
+const KE = () => 0.5 * mS.value * vS.value ** 2;
+document.getElementById('mark').onclick = () => { marks.push({ m: mS.value, v: vS.value, ke: KE() }); draw(); };
+document.getElementById('clear').onclick = () => { marks = []; draw(); };
+ready = true;
+
+// graph geometry
+const G = { x: 70, y: 230, w: 500, h: 200, vmax: 10, kmax: 500 };
+function setScale() { const top = Math.max(0.5 * mS.value * 100, ...marks.map(p => p.ke), 10); G.kmax = Math.ceil(top / 50) * 50; }
+const gx = v => G.x + v / G.vmax * G.w, gy = k => G.y + G.h - k / G.kmax * G.h;
+
+function drawCart(x, y, m) {
+  const w = 70 + m * 5, h = 30 + m * 2.5;
+  ctx.fillStyle = '#c0392b'; ctx.fillRect(x - w / 2, y - h - 14, w, h);
+  ctx.strokeStyle = '#7b241c'; ctx.lineWidth = 2; ctx.strokeRect(x - w / 2, y - h - 14, w, h);
+  Sim.text(ctx, mS.value + ' kg', x, y - h / 2 - 8, { size: 15, color: '#fff', align: 'center' });
+  ctx.fillStyle = '#333';
+  [x - w / 3, x + w / 3].forEach(wx => { ctx.beginPath(); ctx.arc(wx, y - 9, 9, 0, 7); ctx.fill(); });
+}
+
+function draw() {
+  setScale();
+  const W = ctx.W, m = mS.value, v = vS.value, ke = KE();
+  ctx.clearRect(0, 0, W, ctx.H);
+  // track scene
+  ctx.fillStyle = '#eef4fa'; ctx.fillRect(0, 0, W, 180);
+  ctx.fillStyle = '#9aa5ad'; ctx.fillRect(0, 160, W, 8);
+  for (let i = 0; i < 14; i++) { ctx.fillStyle = '#fff'; ctx.fillRect(((i * 80 - cartX * 0) % W), 163, 30, 2); }
+  drawCart(cartX, 160, m);
+  if (v > 0) Sim.arrow(ctx, cartX + 55, 80, cartX + 55 + v * 9, 80, '#1f2933', 3, 'v', 'end');
+  Sim.text(ctx, 'v = ' + v + ' m/s', 18, 30, { size: 18, weight: 700 });
+
+  // graph
+  ctx.fillStyle = '#fff'; ctx.fillRect(G.x, G.y, G.w, G.h);
+  ctx.strokeStyle = '#e3e7eb'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) { const k = G.kmax * i / 5; ctx.beginPath(); ctx.moveTo(G.x, gy(k)); ctx.lineTo(G.x + G.w, gy(k)); ctx.stroke(); Sim.text(ctx, Sim.nice(k), G.x - 8, gy(k) + 5, { size: 12, weight: 500, align: 'right', color: '#5b6770' }); }
+  for (let s = 0; s <= 10; s += 1) { ctx.beginPath(); ctx.moveTo(gx(s), G.y); ctx.lineTo(gx(s), G.y + G.h); ctx.stroke(); Sim.text(ctx, s, gx(s), G.y + G.h + 16, { size: 12, weight: 500, align: 'center', color: '#5b6770' }); }
+  ctx.strokeStyle = '#1f2933'; ctx.lineWidth = 1.5; ctx.strokeRect(G.x, G.y, G.w, G.h);
+  Sim.text(ctx, 'Speed (m/s)', G.x + G.w / 2, G.y + G.h + 34, { size: 13, align: 'center' });
+  ctx.save(); ctx.translate(G.x - 46, G.y + G.h / 2); ctx.rotate(-Math.PI / 2);
+  Sim.text(ctx, 'KE (J)', 0, 0, { size: 13, align: 'center' }); ctx.restore();
+  Sim.text(ctx, 'KE vs. speed for ' + m + ' kg', G.x, G.y - 10, { size: 14, color: '#5b6770' });
+  // curve for current mass (clipped)
+  ctx.save(); ctx.beginPath(); ctx.rect(G.x, G.y, G.w, G.h); ctx.clip();
+  ctx.strokeStyle = Sim.C.ke; ctx.lineWidth = 2.5; ctx.beginPath();
+  for (let s = 0; s <= 10.001; s += 0.1) { const y = gy(0.5 * m * s * s); s === 0 ? ctx.moveTo(gx(s), y) : ctx.lineTo(gx(s), y); }
+  ctx.stroke(); ctx.restore();
+  // marks
+  marks.forEach(p => {
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#1f2933'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(gx(p.v), gy(p.ke), 6, 0, 7); ctx.fill(); ctx.stroke();
+    Sim.text(ctx, `${p.m} kg, ${p.v} m/s: ${Sim.nice(p.ke)} J`, gx(p.v) - 10, gy(p.ke) - 10, { size: 12, weight: 600, align: 'right' });
+  });
+  // current point
+  ctx.fillStyle = Sim.C.ke; ctx.beginPath(); ctx.arc(gx(v), gy(ke), 8, 0, 7); ctx.fill();
+
+  // KE bar
+  Sim.bars(ctx, 640, 200, 230, 250, [{ label: 'Kinetic energy', value: ke, color: Sim.C.ke }], G.kmax, { title: 'ENERGY BAR (max ' + G.kmax + ' J)' });
+
+  document.getElementById('rm').textContent = m + ' kg';
+  document.getElementById('rv').textContent = v + ' m/s';
+  document.getElementById('rv2').textContent = (v * v) + ' m²/s²';
+  document.getElementById('rKE').textContent = Sim.nice(ke) + ' J';
+}
+
+Sim.loop(dt => {
+  cartX += vS.value * 40 * dt;
+  if (cartX > ctx.W + 60) cartX = -60;
+  draw();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gravitational Potential Energy | ACP Energy Sims</title>
+<link rel="stylesheet" href="../../../assets/sim.css">
+</head>
+<body>
+<header class="sim-header">
+  <div>
+    <div class="crumbs"><a href="../../../">Home</a> › <a href="../../">ACP Physics</a> › <a href="../">Energy</a> › Sim 4</div>
+    <h1>Gravitational Potential Energy: Energy of Height</h1>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="sim">Simulation</button>
+    <button class="tab-btn" data-tab="hist">History</button>
+  </nav>
+</header>
+
+<section id="sim" class="tab-panel active">
+  <div class="sim-wrap">
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <aside class="panel">
+      <div class="eq">Gravitational potential energy<br><b>PE = m g h</b></div>
+      <div class="ctrl">
+        <label>Mass, m <span class="val" id="m-val"></span></label>
+        <input type="range" id="m" min="1" max="10" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>Height, h <span class="val" id="h-val"></span></label>
+        <input type="range" id="h" min="0" max="10" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <label>Location <span class="val" id="gval"></span></label>
+        <select id="planet">
+          <option value="9.8">Earth</option>
+          <option value="1.6">Moon</option>
+          <option value="3.7">Mars</option>
+          <option value="24.8">Jupiter</option>
+        </select>
+      </div>
+      <div class="readouts">
+        <div class="ro"><span class="k">Weight, mg (lifting force)</span><span class="v" id="rw"></span></div>
+        <div class="ro"><span class="k">Height</span><span class="v" id="rh"></span></div>
+        <div class="ro"><span class="k">Work to lift = mg × h</span><span class="v" id="rW" style="color:var(--work)"></span></div>
+        <div class="ro big"><span class="k">Potential energy, PE</span><span class="v" id="rPE" style="color:var(--pe)"></span></div>
+      </div>
+      <p style="margin:0;font-size:14px;color:var(--muted)">The block is lifted at a slow, steady speed, so the lifting force equals its weight. Heights are measured from the ground (PE = 0 at the ground).</p>
+    </aside>
+  </div>
+</section>
+
+<section id="hist" class="tab-panel">
+  <div class="history">
+    <div class="card">
+      <h2>Energy that is "stored," waiting to be used</h2>
+      <p>A raised object can do work when it comes down: it can turn a water wheel, drive a pile into the ground or run a clock. Scientists needed a name for this hidden, stored energy.</p>
+    </div>
+    <div class="card">
+      <h3>William Rankine <span class="dates">(1820–1872)</span></h3>
+      <p>A Scottish engineer who studied steam engines and the strength of materials. In <strong>1853</strong> he introduced the term <b>"potential energy"</b> for energy stored by position, as opposed to "actual" (kinetic) energy of motion.</p>
+    </div>
+    <div class="card">
+      <h3>Christiaan Huygens <span class="dates">(1629–1695)</span></h3>
+      <p>The Dutch scientist who built the first accurate pendulum clock in <strong>1656</strong>. Weight-driven clocks run on potential energy: a raised weight slowly falls and keeps the clock ticking for days. Huygens also noticed that a swinging pendulum can rise back to the height it started from, but no higher.</p>
+    </div>
+    <div class="card connect">
+      <h3>Connections</h3>
+      <p><strong>Engineering and history:</strong> The Hoover Dam (completed <strong>1936</strong>) holds back Lake Mead. Water falling about 150 meters through the dam's turbines turns potential energy into electricity for millions of people. "Pumped storage" power plants pump water uphill at night and let it fall during the day.</p>
+      <p><strong>Earth science:</strong> Rocks on a steep mountainside store huge amounts of potential energy. In a landslide or rockfall, that energy is released all at once.</p>
+      <p><strong>Space science:</strong> Try the Moon and Jupiter! The same block at the same height stores very different energy, because the gravitational field strength g is different.</p>
+    </div>
+  </div>
+</section>
+
+<script src="../../../assets/sim.js"></script>
+<script>
+Sim.setupTabs();
+const ctx = Sim.canvas('cv', 900, 470);
+const GROUND = 430, PXM = 32, TX = 170;
+let ready = false, yNow = 0;
+const mS = Sim.slider('m', s => s + ' kg', () => ready && draw());
+const hS = Sim.slider('h', s => s + ' m', () => ready && draw());
+const planet = document.getElementById('planet');
+const g = () => parseFloat(planet.value);
+planet.addEventListener('change', () => { document.getElementById('gval').textContent = 'g = ' + g() + ' m/s²'; draw(); });
+document.getElementById('gval').textContent = 'g = 9.8 m/s²';
+ready = true;
+
+function draw() {
+  const m = mS.value, h = hS.value, gg = g(), W = ctx.W;
+  ctx.clearRect(0, 0, W, ctx.H);
+  const skies = { '9.8': '#eaf3fb', '1.6': '#2b2f3a', '3.7': '#f3d9c6', '24.8': '#f1e2c8' };
+  const grounds = { '9.8': '#7fb069', '1.6': '#9aa0a6', '3.7': '#b5653b', '24.8': '#c79a5b' };
+  ctx.fillStyle = skies[planet.value]; ctx.fillRect(0, 0, 600, GROUND);
+  ctx.fillStyle = grounds[planet.value]; ctx.fillRect(0, GROUND, 600, ctx.H - GROUND);
+  const labelColor = planet.value === '1.6' ? '#e8eaed' : '#1f2933';
+  // tower + ruler
+  ctx.fillStyle = '#9aa5ad'; ctx.fillRect(TX - 70, GROUND - 10.6 * PXM, 14, 10.6 * PXM);
+  for (let k = 0; k <= 10; k++) {
+    const y = GROUND - k * PXM;
+    ctx.strokeStyle = labelColor; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(TX - 56, y); ctx.lineTo(TX - 44, y); ctx.stroke();
+    Sim.text(ctx, k + ' m', TX - 80, y + 5, { size: 12, weight: 500, align: 'right', color: labelColor });
+  }
+  // rope from top beam
+  const top = GROUND - 10.8 * PXM;
+  ctx.fillStyle = '#5b6770'; ctx.fillRect(TX - 70, top - 8, 160, 10);
+  const bh = 34 + m * 2.2, bw = 50 + m * 2.5;
+  const by = GROUND - yNow * PXM;
+  ctx.strokeStyle = '#444'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(TX, top); ctx.lineTo(TX, by - bh); ctx.stroke();
+  // block
+  ctx.fillStyle = '#1d5fa8'; ctx.fillRect(TX - bw / 2, by - bh, bw, bh);
+  Sim.text(ctx, m + ' kg', TX, by - bh / 2 + 5, { size: 14, color: '#fff', align: 'center' });
+  // height arrow
+  if (yNow > 0.15) Sim.arrow(ctx, TX + bw / 2 + 30, GROUND, TX + bw / 2 + 30, by, labelColor, 2.5, '', 'end');
+  if (yNow > 0.15) Sim.text(ctx, 'h = ' + Sim.fmt(yNow, 1) + ' m', TX + bw / 2 + 40, (GROUND + by) / 2 + 5, { size: 15, color: labelColor });
+  // force arrows when moving
+  if (Math.abs(yNow - h) > 0.02) Sim.arrow(ctx, TX + 3, by - bh - 4, TX + 3, by - bh - 4 - Math.min(110, m * gg * 0.8), Sim.C.work, 4, 'lift = mg', 'end');
+  Sim.text(ctx, planet.options[planet.selectedIndex].text + ':  g = ' + gg + ' m/s²', 300, 34, { size: 17, weight: 700, color: labelColor });
+
+  const PE = m * gg * yNow, scale = 10 * gg * 10;
+  Sim.bars(ctx, 620, 40, 260, 410, [{ label: 'Potential energy', value: PE, color: Sim.C.pe }], scale, { title: 'PE BAR (max ' + Sim.nice(scale) + ' J)' });
+  const q = id => document.getElementById(id);
+  q('rw').textContent = Sim.nice(m * gg) + ' N';
+  q('rh').textContent = Sim.fmt(yNow, 1) + ' m';
+  q('rW').textContent = Sim.nice(m * gg * yNow) + ' J';
+  q('rPE').textContent = Sim.nice(PE) + ' J';
+}
+
+Sim.loop(dt => {
+  const target = hS.value, step = 4 * dt;
+  if (Math.abs(yNow - target) <= step) yNow = target; else yNow += Math.sign(target - yNow) * step;
+  draw();
+});
+</script>
+</body>
+</html>
