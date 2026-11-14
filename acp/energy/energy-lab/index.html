@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Energy Lab: PE + KE = ME | Energy Sims</title>
+<link rel="stylesheet" href="../../../assets/sim.css">
+<style>
+  .seg { display: flex; border: 1px solid var(--accent); border-radius: 8px; overflow: hidden; }
+  .seg button { flex: 1; font: inherit; font-weight: 700; font-size: 16px; padding: 8px 0; border: 0;
+                background: #fff; color: var(--accent); cursor: pointer; }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .pts { display: flex; gap: 6px; }
+  .pts button { flex: 1; font: inherit; font-weight: 700; padding: 7px 0; border-radius: 8px; cursor: pointer;
+                border: 1px solid var(--tot); background: #fff; color: var(--tot); }
+  .pts button:hover { background: #f3eefa; }
+  .small { margin: 0; font-size: 14px; color: var(--muted); }
+  .hide { display: none !important; }
+</style>
+</head>
+<body>
+<header class="sim-header">
+  <div>
+    <div class="crumbs"><a href="../../../">Home</a> › <a href="../../">ACP Physics</a> › <a href="../">Energy</a> › Energy Lab</div>
+    <h1>Energy Lab: PE + KE = ME</h1>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="sim">Simulation</button>
+    <button class="tab-btn" data-tab="hist">History</button>
+  </nav>
+</header>
+
+<section id="sim" class="tab-panel active">
+  <div class="sim-wrap">
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <aside class="panel">
+      <div class="ctrl">
+        <label>Level</label>
+        <div class="seg" id="level"><button data-v="cp" class="on">CP</button><button data-v="acp">ACP</button></div>
+      </div>
+      <div class="eq"><b>ME = PE + KE</b><br>PE = mgh &nbsp;&nbsp; KE = ½mv²<br><span id="geq"></span></div>
+      <div class="ctrl">
+        <label>Scene</label>
+        <select id="scene">
+          <option value="drop">Ball drop</option>
+          <option value="bowl">Ball in a bowl</option>
+          <option value="coaster">Roller coaster</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Mass, m <span class="val" id="m-val"></span></label>
+        <input type="range" id="m" min="1" max="10" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>Starting height, h <span class="val" id="h-val"></span></label>
+        <input type="range" id="h" min="5" max="50" step="5" value="20">
+      </div>
+      <div class="ctrl">
+        <label>Location <span class="val" id="g-val"></span></label>
+        <select id="loc"><option value="earth">Earth</option><option value="moon">Moon</option></select>
+      </div>
+      <label class="check"><input type="checkbox" id="showBars" checked> Show bar graph</label>
+      <label class="check"><input type="checkbox" id="showNums" checked> Show numbers on bars</label>
+      <label class="check"><input type="checkbox" id="showH" checked> Show heights of points</label>
+      <label class="check"><input type="checkbox" id="slow"> Slow motion</label>
+      <div class="btn-row">
+        <button class="btn" id="go">▶ Release</button>
+        <button class="btn secondary" id="reset">↺ Reset</button>
+      </div>
+      <div class="ctrl">
+        <label>Jump to a point (pauses there)</label>
+        <div class="pts" id="pts"></div>
+      </div>
+      <div class="readouts">
+        <div class="ro"><span class="k">Height</span><span class="v" id="rh"></span></div>
+        <div class="ro acp-only"><span class="k">Speed</span><span class="v" id="rv"></span></div>
+        <div class="ro"><span class="k">Potential energy, PE</span><span class="v" id="rPE" style="color:var(--pe)"></span></div>
+        <div class="ro"><span class="k">Kinetic energy, KE</span><span class="v" id="rKE" style="color:var(--ke)"></span></div>
+        <div class="ro big"><span class="k">Mechanical energy, ME</span><span class="v" id="rME" style="color:var(--tot)"></span></div>
+      </div>
+      <p class="small">No friction. Heights are measured from the ground, where PE = 0.</p>
+    </aside>
+  </div>
+</section>
+
+<section id="hist" class="tab-panel">
+  <div class="history">
+    <div class="card">
+      <h2>How we learned that PE + KE stays the same</h2>
+      <p>The ideas in this simulation took about 170 years to sort out, from the 1680s to the 1850s.</p>
+    </div>
+    <div class="card">
+      <h3>Gottfried Wilhelm Leibniz <span class="dates">(1646–1716)</span></h3>
+      <p>A German mathematician and philosopher. In <strong>1686</strong> he argued that a moving body carries a "living force" (<em>vis viva</em>) equal to <b>mv²</b>, and that this quantity is what nature keeps constant. That is the ancestor of kinetic energy.</p>
+    </div>
+    <div class="card">
+      <h3>Willem 's Gravesande <span class="dates">(1688–1742)</span> and Émilie du Châtelet <span class="dates">(1706–1749)</span></h3>
+      <p>Around <strong>1722</strong>, the Dutch scientist 's Gravesande dropped brass balls into soft clay. A ball dropped from 4 times the height hit with only twice the speed, but it sank 4 times as deep. In <strong>1740</strong> the French scientist du Châtelet used his results in her physics textbook to show that the energy of motion depends on <b>v²</b>, not v.</p>
+    </div>
+    <div class="card">
+      <h3>Thomas Young <span class="dates">(1773–1829)</span> and Gaspard-Gustave Coriolis <span class="dates">(1792–1843)</span></h3>
+      <p>The English scientist Young first used the word <b>energy</b> in its modern sense in <strong>1807</strong>. In <strong>1829</strong> the French engineer Coriolis added the ½, giving <b>KE = ½mv²</b>, and gave the word <b>work</b> its physics meaning.</p>
+    </div>
+    <div class="card">
+      <h3>William Rankine <span class="dates">(1820–1872)</span></h3>
+      <p>A Scottish engineer who coined the term <b>potential energy</b> in <strong>1853</strong>. By then Mayer, Joule and Helmholtz had shown in the 1840s that energy is never created or destroyed.</p>
+    </div>
+    <div class="card connect">
+      <h3>Connections</h3>
+      <p><strong>History and engineering:</strong> America's first roller coaster, LaMarcus Thompson's Switchback Railway, opened at Coney Island in <strong>1884</strong>. Riders were pushed to the top of a tower, then coasted down on gravity alone. Designers still follow the rule this simulation shows: the first hill must be the tallest.</p>
+      <p><strong>Geology:</strong> Water held high behind a dam has PE. Hoover Dam (finished <strong>1936</strong>) lets water fall about 180 m, turning PE into KE that spins the generators.</p>
+      <p><strong>Biology:</strong> A kangaroo stores energy in its tendons on each landing and gets much of it back on the next hop, trading energy back and forth like the ball in the bowl.</p>
+    </div>
+  </div>
+</section>
+
+<script src="../../../assets/sim.js"></script>
+<script>
+Sim.setupTabs();
+const ctx = Sim.canvas('cv', 900, 470);
+const $ = id => document.getElementById(id);
+
+// ---------------- scenes ----------------
+// Horizontal position X runs 0..1 across the scene; u(X) = height / starting height.
+function cosSeg(pts) {            // smooth curve through control points, flat at each one
+  return X => {
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x0, u0] = pts[i], [x1, u1] = pts[i + 1];
+      if (X <= x1 || i === pts.length - 2) {
+        const t = Math.max(0, Math.min(1, (X - x0) / (x1 - x0)));
+        return u0 + (u1 - u0) * (1 - Math.cos(Math.PI * t)) / 2;
+      }
+    }
+  };
+}
+const SCENES = {
+  drop: {
+    mass: { min: 1, max: 10, step: 1, def: 2 }, hdef: 20,
+    pts: [['A', 1], ['B', 0.6], ['C', 0.2], ['D', 0]],
+  },
+  bowl: {
+    mass: { min: 1, max: 10, step: 1, def: 5 }, hdef: 10,
+    u: X => ((X - 0.5) / 0.5) ** 2,
+    pts: [['A', 0], ['B', 0.5 - 0.5 * Math.sqrt(0.4)], ['C', 0.5], ['D', 0.5 + 0.5 * Math.sqrt(0.4)], ['E', 1]],
+  },
+  coaster: {
+    mass: { min: 100, max: 1000, step: 100, def: 500 }, hdef: 20,
+    u: cosSeg([[0, 1], [0.2, 0], [0.39, 0.6], [0.54, 0.2], [0.67, 0.4], [0.8, 0.12], [1, 1.1]]),
+    pts: [['A', 0], ['B', 0.2], ['C', 0.39], ['D', 0.54], ['E', 0.67]],
+  },
+};
+
+// ---------------- view ----------------
+const GROUND = 432, LEFT = 85, RIGHT = 615;
+let pxm = 1, Wm = 1;                         // pixels per meter, scene width in meters
+const toPx = (x, y) => [LEFT + x * pxm, GROUND - y * pxm];
+
+// ---------------- state ----------------
+const S = { level: 'cp', scene: 'drop', x: 0, y: 0, dir: 1, E: 0, running: false, started: false,
+            landed: false, spin: 0 };
+let ready = false;
+const g = () => $('loc').value === 'moon' ? 1.6 : (S.level === 'cp' ? 10 : 9.8);
+const sc = () => SCENES[S.scene];
+const H = () => hS.value, M = () => mS.value;
+
+const mS = Sim.slider('m', v => v + ' kg', reset);
+const hS = Sim.slider('h', v => v + ' m', reset);
+$('loc').addEventListener('change', reset);
+$('scene').addEventListener('change', () => setScene($('scene').value));
+document.querySelectorAll('#level button').forEach(b => b.onclick = () => setLevel(b.dataset.v));
+$('reset').onclick = reset;
+$('go').onclick = () => {
+  if (!S.started || S.landed) { reset(); S.started = true; S.running = true; }
+  else S.running = !S.running;
+  setGo();
+};
+function setGo() { $('go').textContent = S.running ? '❚❚ Pause' : (S.started && !S.landed ? '▶ Resume' : '▶ Release'); }
+
+function setLevel(v) {
+  S.level = v;
+  document.querySelectorAll('#level button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  document.querySelectorAll('.acp-only').forEach(e => e.classList.toggle('hide', v !== 'acp'));
+  reset();
+}
+function setScene(v) {
+  S.scene = v;
+  const ms = sc().mass;
+  Object.assign(mS.el, { min: ms.min, max: ms.max, step: ms.step });
+  ready = false; mS.value = ms.def; hS.value = sc().hdef; ready = true;
+  const box = $('pts'); box.innerHTML = '';
+  sc().pts.forEach(([L], i) => {
+    const b = document.createElement('button'); b.textContent = L; b.onclick = () => jump(i); box.appendChild(b);
+  });
+  reset();
+}
+
+// geometry in meters
+const yAt = x => S.scene === 'drop' ? 0 : H() * sc().u(x / Wm);
+const slopeAt = x => (yAt(Math.min(Wm, x + 1e-4)) - yAt(Math.max(0, x - 1e-4))) / (Math.min(Wm, x + 1e-4) - Math.max(0, x - 1e-4));
+
+function reset() {
+  if (!ready) return;
+  pxm = 320 / (1.12 * H());
+  Wm = (RIGHT - LEFT) / pxm;
+  S.E = M() * g() * H();
+  S.x = S.scene === 'drop' ? 0 : 0; S.y = H(); S.dir = 1;
+  S.running = false; S.started = false; S.landed = false; S.spin = 0;
+  $('g-val').textContent = 'g = ' + g() + ' m/s²';
+  $('geq').textContent = 'g = ' + g() + ' m/s²';
+  setGo(); draw();
+}
+
+function jump(i) {
+  const p = sc().pts[i];
+  if (S.scene === 'drop') { S.y = H() * p[1]; S.landed = (p[1] === 0); }
+  else { S.x = p[1] * Wm; S.y = yAt(S.x); S.dir = 1; S.landed = false; }
+  S.running = false; S.started = !S.landed; setGo(); draw();
+}
+
+function speed(y) { return Math.sqrt(Math.max(0, 2 * (S.E / M() - g() * y))); }
+
+function step(dt) {
+  const vmin = 0.02 * Math.sqrt(g() * H());
+  let rem = dt;
+  while (rem > 1e-9) {
+    const h = Math.min(0.001, rem); rem -= h;
+    if (S.scene === 'drop') {
+      S.y -= Math.max(speed(S.y), vmin) * h;
+      if (S.y <= 0) { S.y = 0; S.running = false; S.landed = true; setGo(); return; }
+    } else {
+      const sl = slopeAt(S.x);
+      const ds = Math.max(speed(S.y), vmin) * h;
+      const nx = Math.max(0, Math.min(Wm, S.x + S.dir * ds / Math.sqrt(1 + sl * sl)));
+      if (M() * g() * yAt(nx) > S.E * (1 + 1e-12) || nx === S.x) S.dir = -S.dir;
+      else { S.spin += S.dir * ds; S.x = nx; S.y = yAt(nx); }
+    }
+  }
+}
+
+// ---------------- drawing ----------------
+function drawRuler() {
+  const top = H() * 1.12, stepM = H() <= 10 ? 1 : H() <= 20 ? 5 : 10;
+  for (let k = 0; k <= top + 1e-9; k += stepM) {
+    const [, y] = toPx(0, k);
+    ctx.strokeStyle = k === 0 ? '#1f2933' : '#dde3e8'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(55, y); ctx.lineTo(RIGHT + 10, y); ctx.stroke();
+    Sim.text(ctx, k + ' m', 50, y + 4, { size: 12, weight: 500, color: '#5b6770', align: 'right' });
+  }
+  ctx.fillStyle = '#e9e2d0'; ctx.fillRect(10, GROUND, 620, 470 - GROUND);
+  Sim.text(ctx, 'ground: PE = 0', RIGHT, GROUND + 22, { size: 13, color: '#5b6770', align: 'right' });
+  const [, hy] = toPx(0, H());
+  ctx.strokeStyle = Sim.C.tot; ctx.setLineDash([3, 6]); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(55, hy); ctx.lineTo(RIGHT + 10, hy); ctx.stroke(); ctx.setLineDash([]);
+  const mid = S.scene === 'drop' ? [RIGHT, 'right'] : [(LEFT + RIGHT) / 2 + 20, 'center'];
+  Sim.text(ctx, 'starting height ' + H() + ' m', mid[0], hy - 6, { size: 13, color: Sim.C.tot, align: mid[1] });
+}
+
+function pointLabel(L, h, px, py) {
+  const s = $('showH').checked ? `${L} (${Sim.nice(h)} m)` : L;
+  ctx.fillStyle = '#1f2933'; ctx.beginPath(); ctx.arc(px, py, 4, 0, 7); ctx.fill();
+  const lx = Math.max(LEFT + 20, Math.min(RIGHT - 40, px));
+  Sim.text(ctx, s, lx, py - 44, { size: 16, weight: 700, align: 'center' });
+}
+
+function drawBall(cx, cy, r, ang) {
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang);
+  ctx.fillStyle = '#e67e22'; ctx.strokeStyle = '#4a2a0a'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, -r); ctx.lineTo(0, r);
+  ctx.moveTo(-r * 0.7, -r * 0.7); ctx.quadraticCurveTo(-r * 0.2, 0, -r * 0.7, r * 0.7);
+  ctx.moveTo(r * 0.7, -r * 0.7); ctx.quadraticCurveTo(r * 0.2, 0, r * 0.7, r * 0.7); ctx.stroke();
+  ctx.restore();
+}
+
+function drawCart(px, py, ang) {
+  ctx.save(); ctx.translate(px, py); ctx.rotate(-ang);
+  ctx.fillStyle = '#c0392b'; ctx.strokeStyle = '#5a1810'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-24, -9); ctx.lineTo(24, -9); ctx.lineTo(20, -30); ctx.lineTo(-22, -30); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.fillRect(-15, -26, 30, 4);
+  ctx.fillStyle = '#1f2933';
+  ctx.beginPath(); ctx.arc(-14, -5, 5, 0, 7); ctx.arc(14, -5, 5, 0, 7); ctx.fill();
+  ctx.restore();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, ctx.W, ctx.H);
+  ctx.fillStyle = '#eef4fa'; ctx.fillRect(10, 10, 620, GROUND - 10);
+  drawRuler();
+  const s = sc();
+  if (S.scene === 'drop') {
+    const bx = 330, [, top] = toPx(0, H());
+    // ledge
+    ctx.fillStyle = '#b8c2cc'; ctx.fillRect(220, top, 85, GROUND - top);
+    ctx.strokeStyle = '#5b6770'; ctx.lineWidth = 1.5; ctx.strokeRect(220, top, 85, GROUND - top);
+    for (let yy = top + 18; yy < GROUND - 10; yy += 26) { ctx.fillStyle = '#eef4fa'; ctx.fillRect(240, yy, 14, 12); ctx.fillRect(272, yy, 14, 12); }
+    ctx.strokeStyle = '#8a96a1'; ctx.setLineDash([4, 6]);
+    ctx.beginPath(); ctx.moveTo(bx, top); ctx.lineTo(bx, GROUND); ctx.stroke(); ctx.setLineDash([]);
+    s.pts.forEach(([L, u]) => {
+      const [, py] = toPx(0, H() * u);
+      ctx.fillStyle = '#1f2933'; ctx.beginPath(); ctx.arc(bx, py, 4, 0, 7); ctx.fill();
+      Sim.text(ctx, $('showH').checked ? `${L} (${Sim.nice(H() * u)} m)` : L, bx + 14, py - 8, { size: 16, weight: 700 });
+    });
+    const [, by] = toPx(0, S.y);
+    drawBall(bx, by - 13, 13, 0);
+    if (S.landed) Sim.text(ctx, 'Paused just before the ball hits the ground', 320, 60, { size: 15, color: Sim.C.th, align: 'center' });
+  } else {
+    // track
+    ctx.strokeStyle = '#5b6770'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath();
+    for (let i = 0; i <= 400; i++) { const x = Wm * i / 400, [px, py] = toPx(x, yAt(x)); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+    ctx.stroke();
+    if (S.scene === 'coaster') {
+      ctx.strokeStyle = '#9aa5ae'; ctx.lineWidth = 2;
+      for (let i = 1; i < 30; i++) { const x = Wm * i / 30, [px, py] = toPx(x, yAt(x)); if (GROUND - py > 8) { ctx.beginPath(); ctx.moveTo(px, py + 3); ctx.lineTo(px, GROUND); ctx.stroke(); } }
+    }
+    s.pts.forEach(([L, X]) => { const x = X * Wm, [px, py] = toPx(x, yAt(x)); pointLabel(L, yAt(x), px, py); });
+    const [px, py] = toPx(S.x, S.y), ang = Math.atan(slopeAt(S.x));
+    if (S.scene === 'bowl') { const r = 13; drawBall(px - r * Math.sin(ang), py - r * Math.cos(ang), r, S.spin * pxm / r); }
+    else drawCart(px, py, ang);
+  }
+  // values
+  const v = S.landed && S.scene === 'drop' ? speed(0) : speed(S.y);
+  const PE = M() * g() * S.y, KE = Math.max(0, S.E - PE), ME = S.E;
+  const cp = S.level === 'cp';
+  const J = val => (cp ? Math.round(val).toLocaleString() : Sim.nice(val).replace(/\B(?=(\d{3})+(?!\d))/g, ',')) + ' J';
+  const hTxt = cp ? Math.round(S.y) + ' m' : Sim.fmt(S.y, 1) + ' m';
+  Sim.text(ctx, 'height = ' + hTxt + (cp ? '' : '     speed = ' + Sim.fmt(v, 1) + ' m/s'), 20, 34, { size: 17, weight: 700 });
+  $('rh').textContent = hTxt; $('rv').textContent = Sim.fmt(v, 1) + ' m/s';
+  $('rPE').textContent = J(PE); $('rKE').textContent = J(KE); $('rME').textContent = J(ME);
+  // bars
+  if ($('showBars').checked) {
+    drawBars([['PE', PE, Sim.C.pe], ['KE', KE, Sim.C.ke], ['ME', ME, Sim.C.tot]], ME, J);
+  } else {
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = Sim.C.line; ctx.beginPath(); ctx.roundRect(640, 20, 252, 430, 10); ctx.fill(); ctx.stroke();
+    Sim.text(ctx, 'Bar graph hidden', 766, 230, { size: 16, color: Sim.C.muted, align: 'center' });
+    Sim.text(ctx, 'Make your prediction first!', 766, 254, { size: 14, weight: 500, color: Sim.C.muted, align: 'center' });
+  }
+}
+function drawBars(list, max, J) {
+  const x = 640, y = 20, w = 252, h = 430, base = y + h - 32, top = y + 62;
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = Sim.C.line; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 10); ctx.fill(); ctx.stroke();
+  Sim.text(ctx, 'ENERGY (J)', x + 10, y + 20, { size: 13, color: Sim.C.muted });
+  ctx.strokeStyle = Sim.C.ink; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(x + 8, base); ctx.lineTo(x + w - 8, base); ctx.stroke();
+  const gap = 14, bw = (w - gap * 4) / 3;
+  list.forEach(([lab, val, col], i) => {
+    const bx = x + gap + i * (bw + gap), bh = max > 0 ? (base - top) * val / max : 0;
+    ctx.fillStyle = col; ctx.fillRect(bx, base - bh, bw, bh);
+    Sim.text(ctx, lab, bx + bw / 2, base + 20, { size: 15, weight: 700, align: 'center' });
+    if ($('showNums').checked) Sim.text(ctx, J(val), bx + bw / 2, base - bh - 7, { size: 13, weight: 700, align: 'center' });
+  });
+}
+['showBars', 'showNums', 'showH'].forEach(id => $(id).addEventListener('change', draw));
+
+// start-up (?level=acp opens in ACP mode)
+const q = new URLSearchParams(location.search);
+ready = true;
+S.level = q.get('level') === 'acp' ? 'acp' : 'cp';
+setScene('drop');
+setLevel(S.level);
+Sim.loop(dt => { if (S.running) step(dt * ($('slow').checked ? 0.25 : 1)); draw(); });
+</script>
+</body>
+</html>
