@@ -367,6 +367,10 @@ function draw() {
       for (let i = 1; i < 30; i++) { const x = Wm * i / 30, [px, py] = toPx(x, yAt(x)); if (GROUND - py > 8) { ctx.beginPath(); ctx.moveTo(px, py + 3); ctx.lineTo(px, GROUND); ctx.stroke(); } }
     }
     s.pts.forEach(([L, X]) => { const x = X * Wm, [px, py] = toPx(x, yAt(x)); pointLabel(L, yAt(x), px, py); });
+    if (S.scene === 'coaster') {
+      const [ex, ey] = toPx(Wm, yAt(Wm));
+      Sim.text(ctx, `end of track (${Sim.nice(yAt(Wm))} m)`, ex, ey - 12, { size: 13, color: '#5b6770', align: 'right' });
+    }
     const [px, py] = toPx(S.x, S.y), ang = Math.atan(slopeAt(S.x));
     if (S.scene === 'bowl') { const r = 13; drawBall(px - r * Math.sin(ang), py - r * Math.cos(ang), r, 0); }
     else drawCart(px, py, ang);
@@ -387,7 +391,7 @@ function draw() {
   // bars
   if ($('showBars').checked) {
     const list = [['PE', PE, Sim.C.pe], ['KE', KE, Sim.C.ke], ['ME', ME, Sim.C.tot]];
-    if (fr) list.push(['Heat', Th, Sim.C.th]);
+    if (fr) { list.push(['Heat', Th, Sim.C.th]); list.push(['Total', E0, null, [[PE, Sim.C.pe], [KE, Sim.C.ke], [Th, Sim.C.th]]]); }
     drawBars(list, E0, J, fr);
   } else {
     ctx.fillStyle = '#fff'; ctx.strokeStyle = Sim.C.line; ctx.beginPath(); ctx.roundRect(640, 20, 252, 430, 10); ctx.fill(); ctx.stroke();
@@ -402,17 +406,22 @@ function drawBars(list, max, J, startLine) {
   Sim.text(ctx, 'ENERGY (J)', x + 10, y + 20, { size: 13, color: Sim.C.muted });
   ctx.strokeStyle = Sim.C.ink; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(x + 8, base); ctx.lineTo(x + w - 8, base); ctx.stroke();
-  const n = list.length, gap = n > 3 ? 10 : 14, bw = (w - gap * (n + 1)) / n;
+  const n = list.length, gap = n > 4 ? 6 : n > 3 ? 10 : 14, bw = (w - gap * (n + 1)) / n;
+  const num = n > 4 ? (v => Math.round(v).toLocaleString('en-US')) : J;   // 5 bars: drop the "J" to save room
   if (startLine) {
     ctx.strokeStyle = Sim.C.tot; ctx.setLineDash([5, 5]); ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(x + 8, top); ctx.lineTo(x + w - 8, top); ctx.stroke(); ctx.setLineDash([]);
     Sim.text(ctx, 'starting energy', x + w - 10, top - 26, { size: 12, color: Sim.C.tot, align: 'right' });
   }
-  list.forEach(([lab, val, col], i) => {
-    const bx = x + gap + i * (bw + gap), bh = max > 0 ? (base - top) * val / max : 0;
-    ctx.fillStyle = col; ctx.fillRect(bx, base - bh, bw, bh);
-    Sim.text(ctx, lab, bx + bw / 2, base + 20, { size: 15, weight: 700, align: 'center' });
-    if ($('showNums').checked) Sim.text(ctx, J(val), bx + bw / 2, base - bh - 7, { size: n > 3 ? 11.5 : 13, weight: 700, align: 'center' });
+  list.forEach(([lab, val, col, stack], i) => {
+    const bx = x + gap + i * (bw + gap), sc = v => max > 0 ? (base - top) * v / max : 0;
+    if (stack) {                                   // stacked bar: PE + KE + Heat
+      let yy = base;
+      stack.forEach(([v, c]) => { const hh = sc(v); ctx.fillStyle = c; ctx.fillRect(bx, yy - hh, bw, hh); yy -= hh; });
+      ctx.strokeStyle = Sim.C.ink; ctx.lineWidth = 1.5; ctx.strokeRect(bx, base - sc(val), bw, sc(val));
+    } else { ctx.fillStyle = col; ctx.fillRect(bx, base - sc(val), bw, sc(val)); }
+    Sim.text(ctx, lab, bx + bw / 2, base + 20, { size: n > 4 ? 13 : 15, weight: 700, align: 'center' });
+    if ($('showNums').checked) Sim.text(ctx, num(val), bx + bw / 2, base - sc(val) - 7, { size: n > 4 ? 10.5 : n > 3 ? 11.5 : 13, weight: 700, align: 'center' });
   });
 }
 ['showBars', 'showNums', 'showH'].forEach(id => $(id).addEventListener('change', draw));
