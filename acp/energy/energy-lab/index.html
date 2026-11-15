@@ -59,6 +59,11 @@
         <label>Location <span class="val" id="g-val"></span></label>
         <select id="loc"><option value="earth">Earth</option><option value="moon">Moon</option></select>
       </div>
+      <label class="check cp-only"><input type="checkbox" id="fricCP"> Friction on</label>
+      <div class="ctrl acp-only">
+        <label>Friction</label>
+        <select id="fricACP"><option value="0">None</option><option value="0.05">Low</option><option value="0.1">Medium</option><option value="0.25">High</option></select>
+      </div>
       <label class="check"><input type="checkbox" id="showBars" checked> Show bar graph</label>
       <label class="check"><input type="checkbox" id="showNums" checked> Show numbers on bars</label>
       <label class="check"><input type="checkbox" id="showH" checked> Show heights of points</label>
@@ -73,12 +78,14 @@
       </div>
       <div class="readouts">
         <div class="ro"><span class="k">Height</span><span class="v" id="rh"></span></div>
-        <div class="ro acp-only"><span class="k">Speed</span><span class="v" id="rv"></span></div>
+        <div class="ro"><span class="k">Speed</span><span class="v" id="rv"></span></div>
         <div class="ro"><span class="k">Potential energy, PE</span><span class="v" id="rPE" style="color:var(--pe)"></span></div>
         <div class="ro"><span class="k">Kinetic energy, KE</span><span class="v" id="rKE" style="color:var(--ke)"></span></div>
         <div class="ro big"><span class="k">Mechanical energy, ME</span><span class="v" id="rME" style="color:var(--tot)"></span></div>
+        <div class="ro fric-only"><span class="k">Heat (thermal energy)</span><span class="v" id="rTh" style="color:var(--th)"></span></div>
+        <div class="ro fric-only"><span class="k">ME + Heat</span><span class="v" id="rTot"></span></div>
       </div>
-      <p class="small">No friction. Heights are measured from the ground, where PE = 0.</p>
+      <p class="small" id="note"></p>
     </aside>
   </div>
 </section>
@@ -104,6 +111,10 @@
     <div class="card">
       <h3>William Rankine <span class="dates">(1820–1872)</span></h3>
       <p>A Scottish engineer who coined the term <b>potential energy</b> in <strong>1853</strong>. By then Mayer, Joule and Helmholtz had shown in the 1840s that energy is never created or destroyed.</p>
+    </div>
+    <div class="card">
+      <h3>Count Rumford <span class="dates">(1753–1814)</span> and James Prescott Joule <span class="dates">(1818–1889)</span></h3>
+      <p>Where does energy go when friction slows things down? In <strong>1798</strong>, Rumford (born Benjamin Thompson in Massachusetts) noticed that boring out cannon barrels in Munich made endless heat from friction alone. In the <strong>1840s</strong>, Joule used a falling weight to spin a paddle wheel in water and measured how much the water warmed up. Mechanical energy that seems to disappear shows up as <b>heat</b>.</p>
     </div>
     <div class="card connect">
       <h3>Connections</h3>
@@ -156,30 +167,33 @@ let pxm = 1, Wm = 1;                         // pixels per meter, scene width in
 const toPx = (x, y) => [LEFT + x * pxm, GROUND - y * pxm];
 
 // ---------------- state ----------------
-const S = { level: 'cp', scene: 'drop', x: 0, y: 0, dir: 1, E: 0, running: false, started: false,
-            landed: false, spin: 0 };
+const S = { level: 'cp', scene: 'drop', x: 0, y: 0, dir: 1, E0: 0, heat: 0, running: false, started: false,
+            landed: false, settled: false, spin: 0, msg: '' };
 let ready = false;
-const g = () => $('loc').value === 'moon' ? 1.6 : (S.level === 'cp' ? 10 : 9.8);
+const g = () => $('loc').value === 'moon' ? 1.6 : 10;
+const kFric = () => S.level === 'cp' ? ($('fricCP').checked ? 0.05 : 0) : +$('fricACP').value;
+const Ff = () => kFric() * M() * g();                     // friction force (N)
 const sc = () => SCENES[S.scene];
 const H = () => hS.value, M = () => mS.value;
 
 const mS = Sim.slider('m', v => v + ' kg', reset);
 const hS = Sim.slider('h', v => v + ' m', reset);
-$('loc').addEventListener('change', reset);
+['loc', 'fricCP', 'fricACP'].forEach(id => $(id).addEventListener('change', reset));
 $('scene').addEventListener('change', () => setScene($('scene').value));
 document.querySelectorAll('#level button').forEach(b => b.onclick = () => setLevel(b.dataset.v));
 $('reset').onclick = reset;
 $('go').onclick = () => {
-  if (!S.started || S.landed) { reset(); S.started = true; S.running = true; }
+  if (!S.started || S.landed || S.settled) { reset(); S.started = true; S.running = true; }
   else S.running = !S.running;
   setGo();
 };
-function setGo() { $('go').textContent = S.running ? '❚❚ Pause' : (S.started && !S.landed ? '▶ Resume' : '▶ Release'); }
+function setGo() { $('go').textContent = S.running ? '❚❚ Pause' : (S.started && !S.landed && !S.settled ? '▶ Resume' : '▶ Release'); }
 
 function setLevel(v) {
   S.level = v;
   document.querySelectorAll('#level button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
   document.querySelectorAll('.acp-only').forEach(e => e.classList.toggle('hide', v !== 'acp'));
+  document.querySelectorAll('.cp-only').forEach(e => e.classList.toggle('hide', v !== 'cp'));
   reset();
 }
 function setScene(v) {
@@ -202,37 +216,76 @@ function reset() {
   if (!ready) return;
   pxm = 320 / (1.12 * H());
   Wm = (RIGHT - LEFT) / pxm;
-  S.E = M() * g() * H();
-  S.x = S.scene === 'drop' ? 0 : 0; S.y = H(); S.dir = 1;
-  S.running = false; S.started = false; S.landed = false; S.spin = 0;
+  S.E0 = M() * g() * H(); S.heat = 0;
+  S.x = 0; S.y = H(); S.dir = 1; S.spin = 0; S.msg = '';
+  S.running = false; S.started = false; S.landed = false; S.settled = false;
   $('g-val').textContent = 'g = ' + g() + ' m/s²';
   $('geq').textContent = 'g = ' + g() + ' m/s²';
+  const f = kFric() > 0;
+  document.querySelectorAll('.fric-only').forEach(e => e.classList.toggle('hide', !f));
+  $('note').textContent = (f ? 'Friction is on: some energy turns into heat. ' : 'No friction. ')
+    + 'Heights are measured from the ground, where PE = 0.';
   setGo(); draw();
+}
+const Em = () => S.E0 - S.heat;                            // mechanical energy left
+
+// distance along the path from the start to horizontal position x (meters)
+function pathTo(x) {
+  let s = 0, px = 0, py = yAt(0); const n = 600;
+  for (let i = 1; i <= n; i++) { const xx = x * i / n, yy = yAt(xx); s += Math.hypot(xx - px, yy - py); px = xx; py = yy; }
+  return s;
 }
 
 function jump(i) {
-  const p = sc().pts[i];
-  if (S.scene === 'drop') { S.y = H() * p[1]; S.landed = (p[1] === 0); }
-  else { S.x = p[1] * Wm; S.y = yAt(S.x); S.dir = 1; S.landed = false; }
+  const p = sc().pts[i], F = Ff();
+  S.msg = ''; S.settled = false; S.landed = false; S.spin = 0;
+  if (S.scene === 'drop') {
+    S.y = H() * p[1]; S.heat = F * (H() - S.y); S.landed = (p[1] === 0);
+  } else {
+    // run the same physics as "Release" from the start until the object first reaches the point
+    const xt = p[1] * Wm;
+    S.x = 0; S.y = H(); S.heat = 0; S.dir = 1;
+    if (xt > 0) {
+      let ok = false;
+      for (let k = 0; k < 400000; k++) {
+        const px = S.x, py = S.y;
+        S.running = true; step(0.001);
+        if (S.dir === 1 && S.x >= xt) {           // passed the point: back up the tiny overshoot
+          S.heat -= F * Math.hypot(S.x - xt, S.y - yAt(xt)) * (S.x > px ? 1 : 0);
+          S.x = xt; S.y = yAt(xt); ok = true; break;
+        }
+        if (S.dir === -1 || S.settled) break;     // turned back (or stopped) before getting there
+      }
+      if (!ok) { S.heat = S.E0 - M() * g() * S.y; S.msg = `It never reaches point ${p[0]}. It turns back at ${Sim.fmt(S.y, 1)} m.`; }
+      S.settled = false;
+    }
+  }
   S.running = false; S.started = !S.landed; setGo(); draw();
 }
 
-function speed(y) { return Math.sqrt(Math.max(0, 2 * (S.E / M() - g() * y))); }
+function speed() { return Math.sqrt(Math.max(0, 2 * (Em() / M() - g() * S.y))); }
 
 function step(dt) {
-  const vmin = 0.02 * Math.sqrt(g() * H());
+  const vmin = 0.02 * Math.sqrt(g() * H()), F = Ff();
   let rem = dt;
   while (rem > 1e-9) {
     const h = Math.min(0.001, rem); rem -= h;
+    const v = speed();
     if (S.scene === 'drop') {
-      S.y -= Math.max(speed(S.y), vmin) * h;
-      if (S.y <= 0) { S.y = 0; S.running = false; S.landed = true; setGo(); return; }
+      const ds = Math.max(v, vmin) * h;
+      S.heat += F * v * h; S.y -= ds;
+      if (S.y <= 0) { S.heat = F * H(); S.y = 0; S.running = false; S.landed = true; setGo(); return; }
     } else {
       const sl = slopeAt(S.x);
-      const ds = Math.max(speed(S.y), vmin) * h;
+      const ds = Math.max(v, vmin) * h;
       const nx = Math.max(0, Math.min(Wm, S.x + S.dir * ds / Math.sqrt(1 + sl * sl)));
-      if (M() * g() * yAt(nx) > S.E * (1 + 1e-12) || nx === S.x) S.dir = -S.dir;
-      else { S.spin += S.dir * ds; S.x = nx; S.y = yAt(nx); }
+      if (M() * g() * yAt(nx) > Em() * (1 + 1e-12) || nx === S.x) {
+        // turning point: with friction, it stops if gravity along the slope can't beat friction
+        if (F > 0 && g() * Math.abs(sl) / Math.sqrt(1 + sl * sl) <= F / M()) {
+          S.heat = S.E0 - M() * g() * S.y; S.running = false; S.settled = true; setGo(); return;
+        }
+        S.dir = -S.dir;
+      } else { S.heat += F * v * h; S.spin += S.dir * ds; S.x = nx; S.y = yAt(nx); }
     }
   }
 }
@@ -303,7 +356,7 @@ function draw() {
     });
     const [, by] = toPx(0, S.y);
     drawBall(bx, by - 13, 13, 0);
-    if (S.landed) Sim.text(ctx, 'Paused just before the ball hits the ground', 320, 60, { size: 15, color: Sim.C.th, align: 'center' });
+    if (S.landed) Sim.text(ctx, 'Paused just before the ball hits the ground', 320, 86, { size: 15, color: Sim.C.th, align: 'center' });
   } else {
     // track
     ctx.strokeStyle = '#5b6770'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath();
@@ -319,36 +372,47 @@ function draw() {
     else drawCart(px, py, ang);
   }
   // values
-  const v = S.landed && S.scene === 'drop' ? speed(0) : speed(S.y);
-  const PE = M() * g() * S.y, KE = Math.max(0, S.E - PE), ME = S.E;
+  const v = speed(), fr = kFric() > 0;
+  // whole joules, rounded so that PE + KE = ME and ME + Heat = starting energy exactly
+  const E0 = Math.round(S.E0), Th = Math.round(S.heat), ME = E0 - Th, PE = Math.round(M() * g() * S.y), KE = Math.max(0, ME - PE);
   const cp = S.level === 'cp';
-  const J = val => (cp ? Math.round(val).toLocaleString() : Sim.nice(val).replace(/\B(?=(\d{3})+(?!\d))/g, ',')) + ' J';
-  const hTxt = cp ? Math.round(S.y) + ' m' : Sim.fmt(S.y, 1) + ' m';
-  Sim.text(ctx, 'height = ' + hTxt + (cp ? '' : '     speed = ' + Sim.fmt(v, 1) + ' m/s'), 20, 34, { size: 17, weight: 700 });
+  const J = val => Math.round(val).toLocaleString('en-US') + ' J';
+  const hTxt = Sim.fmt(S.y, 1).replace(/\.0$/, '') + ' m';
+  Sim.text(ctx, 'height = ' + hTxt + '     speed = ' + Sim.fmt(v, 1) + ' m/s', 20, 34, { size: 17, weight: 700 });
+  if (S.msg) Sim.text(ctx, S.msg, 320, 62, { size: 15, color: Sim.C.th, align: 'center' });
+  if (S.settled) Sim.text(ctx, 'Stopped: friction turned its ME into heat', 320, 62, { size: 15, color: Sim.C.th, align: 'center' });
   $('rh').textContent = hTxt; $('rv').textContent = Sim.fmt(v, 1) + ' m/s';
   $('rPE').textContent = J(PE); $('rKE').textContent = J(KE); $('rME').textContent = J(ME);
+  $('rTh').textContent = J(Th); $('rTot').textContent = J(ME + Th);
   // bars
   if ($('showBars').checked) {
-    drawBars([['PE', PE, Sim.C.pe], ['KE', KE, Sim.C.ke], ['ME', ME, Sim.C.tot]], ME, J);
+    const list = [['PE', PE, Sim.C.pe], ['KE', KE, Sim.C.ke], ['ME', ME, Sim.C.tot]];
+    if (fr) list.push(['Heat', Th, Sim.C.th]);
+    drawBars(list, E0, J, fr);
   } else {
     ctx.fillStyle = '#fff'; ctx.strokeStyle = Sim.C.line; ctx.beginPath(); ctx.roundRect(640, 20, 252, 430, 10); ctx.fill(); ctx.stroke();
     Sim.text(ctx, 'Bar graph hidden', 766, 230, { size: 16, color: Sim.C.muted, align: 'center' });
     Sim.text(ctx, 'Make your prediction first!', 766, 254, { size: 14, weight: 500, color: Sim.C.muted, align: 'center' });
   }
 }
-function drawBars(list, max, J) {
+function drawBars(list, max, J, startLine) {
   const x = 640, y = 20, w = 252, h = 430, base = y + h - 32, top = y + 62;
   ctx.fillStyle = '#fff'; ctx.strokeStyle = Sim.C.line; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.roundRect(x, y, w, h, 10); ctx.fill(); ctx.stroke();
   Sim.text(ctx, 'ENERGY (J)', x + 10, y + 20, { size: 13, color: Sim.C.muted });
   ctx.strokeStyle = Sim.C.ink; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(x + 8, base); ctx.lineTo(x + w - 8, base); ctx.stroke();
-  const gap = 14, bw = (w - gap * 4) / 3;
+  const n = list.length, gap = n > 3 ? 10 : 14, bw = (w - gap * (n + 1)) / n;
+  if (startLine) {
+    ctx.strokeStyle = Sim.C.tot; ctx.setLineDash([5, 5]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x + 8, top); ctx.lineTo(x + w - 8, top); ctx.stroke(); ctx.setLineDash([]);
+    Sim.text(ctx, 'starting energy', x + w - 10, top - 26, { size: 12, color: Sim.C.tot, align: 'right' });
+  }
   list.forEach(([lab, val, col], i) => {
     const bx = x + gap + i * (bw + gap), bh = max > 0 ? (base - top) * val / max : 0;
     ctx.fillStyle = col; ctx.fillRect(bx, base - bh, bw, bh);
     Sim.text(ctx, lab, bx + bw / 2, base + 20, { size: 15, weight: 700, align: 'center' });
-    if ($('showNums').checked) Sim.text(ctx, J(val), bx + bw / 2, base - bh - 7, { size: 13, weight: 700, align: 'center' });
+    if ($('showNums').checked) Sim.text(ctx, J(val), bx + bw / 2, base - bh - 7, { size: n > 3 ? 11.5 : 13, weight: 700, align: 'center' });
   });
 }
 ['showBars', 'showNums', 'showH'].forEach(id => $(id).addEventListener('change', draw));
