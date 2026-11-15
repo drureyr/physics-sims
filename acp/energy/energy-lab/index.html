@@ -38,7 +38,6 @@
         <label>Level</label>
         <div class="seg" id="level"><button data-v="cp" class="on">CP</button><button data-v="acp">ACP</button></div>
       </div>
-      <div class="eq"><b>ME = PE + KE</b><br>PE = mgh &nbsp;&nbsp; KE = ½mv²<br><span id="geq"></span></div>
       <div class="ctrl">
         <label>Scene</label>
         <select id="scene">
@@ -64,10 +63,6 @@
         <label>Friction</label>
         <select id="fricACP"><option value="0">None</option><option value="0.05">Low</option><option value="0.1">Medium</option><option value="0.25">High</option></select>
       </div>
-      <label class="check"><input type="checkbox" id="showBars" checked> Show bar graph</label>
-      <label class="check"><input type="checkbox" id="showNums" checked> Show numbers on bars</label>
-      <label class="check"><input type="checkbox" id="showH" checked> Show heights of points</label>
-      <label class="check"><input type="checkbox" id="slow"> Slow motion</label>
       <div class="btn-row">
         <button class="btn" id="go">▶ Release</button>
         <button class="btn secondary" id="reset">↺ Reset</button>
@@ -85,7 +80,12 @@
         <div class="ro fric-only"><span class="k">Heat (thermal energy)</span><span class="v" id="rTh" style="color:var(--th)"></span></div>
         <div class="ro fric-only"><span class="k">ME + Heat</span><span class="v" id="rTot"></span></div>
       </div>
+      <div class="eq"><b>ME = PE + KE</b><br>PE = mgh &nbsp;&nbsp; KE = ½mv²<br><span id="geq"></span></div>
       <p class="small" id="note"></p>
+      <label class="check"><input type="checkbox" id="showBars" checked> Show bar graph</label>
+      <label class="check"><input type="checkbox" id="showNums" checked> Show numbers on bars</label>
+      <label class="check"><input type="checkbox" id="showH" checked> Show heights of points</label>
+      <label class="check"><input type="checkbox" id="slow"> Slow motion</label>
     </aside>
   </div>
 </section>
@@ -368,7 +368,7 @@ function draw() {
     }
     s.pts.forEach(([L, X]) => { const x = X * Wm, [px, py] = toPx(x, yAt(x)); pointLabel(L, yAt(x), px, py); });
     const [px, py] = toPx(S.x, S.y), ang = Math.atan(slopeAt(S.x));
-    if (S.scene === 'bowl') { const r = 13; drawBall(px - r * Math.sin(ang), py - r * Math.cos(ang), r, S.spin * pxm / r); }
+    if (S.scene === 'bowl') { const r = 13; drawBall(px - r * Math.sin(ang), py - r * Math.cos(ang), r, 0); }
     else drawCart(px, py, ang);
   }
   // values
@@ -380,7 +380,7 @@ function draw() {
   const hTxt = Sim.fmt(S.y, 1).replace(/\.0$/, '') + ' m';
   Sim.text(ctx, 'height = ' + hTxt + '     speed = ' + Sim.fmt(v, 1) + ' m/s', 20, 34, { size: 17, weight: 700 });
   if (S.msg) Sim.text(ctx, S.msg, 320, 62, { size: 15, color: Sim.C.th, align: 'center' });
-  if (S.settled) Sim.text(ctx, 'Stopped: friction turned its ME into heat', 320, 62, { size: 15, color: Sim.C.th, align: 'center' });
+  if (S.settled) Sim.text(ctx, 'Stopped. Friction turned some of its energy into heat.', 320, 62, { size: 15, color: Sim.C.th, align: 'center' });
   $('rh').textContent = hTxt; $('rv').textContent = Sim.fmt(v, 1) + ' m/s';
   $('rPE').textContent = J(PE); $('rKE').textContent = J(KE); $('rME').textContent = J(ME);
   $('rTh').textContent = J(Th); $('rTot').textContent = J(ME + Th);
