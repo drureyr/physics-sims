@@ -223,7 +223,7 @@ function reset() {
   $('geq').textContent = 'g = ' + g() + ' m/s²';
   const f = kFric() > 0;
   document.querySelectorAll('.fric-only').forEach(e => e.classList.toggle('hide', !f));
-  $('note').textContent = (f ? 'Friction is on: some energy turns into heat. ' : 'No friction. ')
+  $('note').textContent = (f ? (S.scene === 'drop' ? 'Friction (air resistance) is on' : 'Friction is on') + ': some energy turns into heat. ' : 'No friction. ')
     + 'Heights are measured from the ground, where PE = 0.';
   setGo(); draw();
 }
